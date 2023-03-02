@@ -1,0 +1,39 @@
+config:
+  payload:
+    # path is relative to the location of the test script
+    path: "../characterTokenIds.csv"
+    fields:
+      - "characterTokenId"
+    order: sequence
+  target: "{{$processEnvironment.BACKEND_URL}}"
+  plugins:
+    expect: {}
+  phases:
+    - name: stress
+      duration: 300 # duration of the phase in seconds
+      arrivalCount: 100 
+      #arrivalRate: 2 # maintain 2 new flows for 300 seconds
+      description: This phase simulates a sustained load on the system under test with creation of 100 virtual users evenly over 300 seconds.
+
+  processor: "../processors/load-processor.js"
+ 
+scenarios:
+  - flow:
+      - post:
+          url: "/infrastructure/rooms/random"
+          afterResponse: "formatPendingRoomId"
+          json:
+            passDTO: {"passId": 2, "tokenId": 40, "signature": "0x80739f763e6b59124c4298f5bddf0e271683df848073a8bbcbd7197973f2981441b8bc1d7623957ecf1ca09b6dedb25097ad5b984d02e7232bee80804d4bff8b1b"}
+            characterTokenId: "{{characterTokenId}}"
+            playerAddress: "0x6C02f2E94f934c90774965822D6cD6AB94d8305b"
+          capture:
+            regexp: '[^]*'
+            as: "pendingRoomID"
+      - loop:
+          - think: 60
+          - get:
+                url: "/infrastructure/rooms/{{pendingRoomID}}"
+                capture:
+                  - json: "$.status"
+                    as: status
+        whileTrue: "statusReady"

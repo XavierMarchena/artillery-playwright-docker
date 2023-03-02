@@ -1,0 +1,9 @@
+node_modules/
+html/
+videos/
+test-results/
+.vscode
+.env
+*.log
+*.zip
+*.csv

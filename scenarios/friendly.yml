@@ -1,0 +1,58 @@
+config:
+  target: "{{$processEnvironment.BACKEND_URL}}"
+  http:
+    # Responses have to be sent within 10 seconds, or an `ETIMEDOUT` error gets raised.
+    timeout: 60
+  plugins:
+    expect: {}
+  phases:
+    - name: stress
+      duration: 300 # duration of the phase in seconds
+      arrivalRate: 2 # maintain 2 new flows per second second for 300 seconds
+      description: This phase simulates a sustained load on the system under test with 2 concurrent flows arriving each second during 300 seconds.
+  processor: "../processors/load-processor.js"
+ 
+scenarios:
+  - name: "Create friendly room, join, and check it's ready with pass use bypassed"
+    flow:
+      - function: "generateRandomData"
+      - post:
+          url: "/infrastructure/rooms/friendly"
+          afterResponse: "formatPendingRoomId"
+          json:
+            spectators: false
+            passDTO: {"passId": 3, "tokenId": 2, "signature": "0x80739f763e6b59124c4298f5bddf0e271683df848073a8bbcbd7197973f2981441b8bc1d7623957ecf1ca09b6dedb25097ad5b984d02e7232bee80804d4bff8b1b"}
+            characterTokenId: "{{randomCharacterTokenId1}}"
+            playerAddress: "0x6C02f2E94f934c90774965822D6cD6AB94d8305b"
+          capture:
+            regexp: '[^]*'
+            as: "pendingRoomID"
+      - patch:
+          url: "/infrastructure/rooms/friendly"
+          json:
+            pendingRoomID: "{{pendingRoomID}}"
+            passDTO: {"passId": 3, "tokenId": 1, "signature": "0x8a7bdf4127718018fd863d5660588fe77a724d246ae0f100243722a7ac671fef39d3792d998992609e8f83502f3d267779b24bbacd1ec38137792feffc9888271c"}
+            characterTokenId: "{{randomCharacterTokenId2}}"
+            playerAddress: "0x0DE00CbBBb20E485dAdFe2Fb4B6D9BcD9D4e9adD"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: status
+      - loop:
+          - think: 1
+          - get:
+                url: "/infrastructure/rooms/{{pendingRoomID}}"
+                capture:
+                  - json: "$.status"
+                    as: status
+        whileTrue: "statusReady"
+      - think: 360
+      - post:
+          url: "/fights"
+          json:
+            player1TokenId: "{{randomCharacterTokenId1}}"
+            player2TokenId: "{{randomCharacterTokenId2}}"
+            winner: 0
+          expect:
+            - statusCode: 201
+            - contentType: json

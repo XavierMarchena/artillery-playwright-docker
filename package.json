@@ -1,0 +1,21 @@
+{
+  "name": "artillery-playwright-docker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@playwright/test": "^1.22.2",
+    "playwright": "^1.28.0",
+    "artillery": "^2.0.0-19",
+    "faker": "^5.5.3",
+    "dotenv": "^16.0.3"
+  },
+  "scripts": {
+    "test": "$(npm bin)/artillery run ./scenarios/home.yml",
+    "test:friendly": "DEBUG=http* $(npm bin)/artillery run --output ./html/report.json --dotenv .env ./scenarios/friendly.yml",
+    "test:random": "DEBUG=http* $(npm bin)/artillery run --output ./html/report.json --dotenv .env ./scenarios/random.yml",
+    "test:report": "$(npm bin)/artillery report ./html/report.json -o ./html/report.html"
+  },
+  "author": "Xavier Marchena",
+  "license": "ISC"
+}

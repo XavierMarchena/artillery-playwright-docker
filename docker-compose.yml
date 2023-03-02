@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+    artillery-playwright-tests:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: artillery-playwright
+        container_name: artillery-playwright-tests
+        volumes:
+            - ./processors:/app/processors
+            - ./scenarios:/app/scenarios
+            - ./tests:/app/tests
+            - ./html:/app/html
+            - ./package.json:/app/package.json
+            - ./.env:/app/.env
+            - ./entrypoint.sh:/app/entrypoint.sh
+            - ./test-results:/app/test-results
+            - ./playwright.config.js:/app/playwright.config.js
+
+            
